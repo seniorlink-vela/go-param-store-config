@@ -18,11 +18,11 @@ jobs:
       - name: Run Tests
         run: |
           gotestsum --junitfile test-report.xml
-    - uses: ashley-taylor/junit-report-annotations-action@master
-      with:
-        name: Test Results
-        path: test-report.xml
-        includeSummary: true
-        numFailures: 5
-        access-token: ${{ secrets.GITHUB_TOKEN }}
-      if: always()
+      - uses: ashley-taylor/junit-report-annotations-action@master
+        with:
+          name: Test Results
+          path: test-report.xml
+          includeSummary: true
+          numFailures: 5
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+        if: always()
