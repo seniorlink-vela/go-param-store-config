@@ -13,16 +13,6 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go }}
-      - name: Install tools
-        run: go get gotest.tools/gotestsum
       - name: Run Tests
         run: |
-          gotestsum --junitfile test-report.xml
-      - uses: ashley-taylor/junit-report-annotations-action@master
-        with:
-          name: Test Results
-          path: test-report.xml
-          includeSummary: true
-          numFailures: 5
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-        if: always()
+          go test -v ./...
