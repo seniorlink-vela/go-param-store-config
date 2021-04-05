@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	//"github.com/stretchr/testify/assert"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -24,7 +24,7 @@ func init() {
 type LoaderSuite struct {
 	suite.Suite
 	l psconfig.Loader
-	c interface{}
+	c *testConfig
 }
 
 type mockParamStore struct {
@@ -69,12 +69,47 @@ var pm = map[string]string{
 	"/env/application/service_login/password":      "P@ssword!",
 	"/env/application/days_valid":                  "720h",
 	"/env/application/code_timeout":                "10m",
-	"/env/application/api_base_uri":                "https://example.com/api/admin/v1",
+	"/env/application/api_base_uri":                "example.com/api/admin/v1",
 	"/env/application/level1/level2/level3/value1": "one",
 	"/env/application/level1/level2/level3/value2": "two",
 	"/env/application/level1/level2/value":         "foo",
 	"/env/application/level1/value1":               "one",
 	"/env/application/level1/value2":               "two",
+}
+
+type testConfig struct {
+	HTTP struct {
+		Port          int           `ps:"port"`
+		ProfilingPort int           `ps:"profiling_port"`
+		ReadTimeout   time.Duration `ps:"read_timeout"`
+		WriteTimeout  time.Duration `ps:"write_timeout"`
+	} `ps:"http"`
+	Log struct {
+		LogLevel    string   `ps:"log_level"`
+		OutputPaths []string `ps:"output_paths"`
+	} `ps:"log"`
+	Caching struct {
+		BaseURI  string `ps:"base_uri"`
+		PoolSize int    `ps:"pool_size"`
+	} `ps:"caching"`
+	ServiceLogin struct {
+		Username string `ps:"username"`
+		Password string `ps:"password"`
+	} `ps:"service_login"`
+	DaysValid   time.Duration `ps:"days_valid"`
+	CodeTimeout time.Duration `ps:"code_timeout"`
+	ApiBaseURI  string        `ps:"api_base_uri"`
+	Level1      struct {
+		Level2 struct {
+			Level3 struct {
+				Value1 string `ps:"value1"`
+				Value2 string `ps:"value2"`
+			} `ps:"level3"`
+			Value string `ps:"value"`
+		} `ps:"level2"`
+		Value1 string `ps:"value1"`
+		Value2 string `ps:"value2"`
+	} `ps:"level1"`
 }
 
 func (s *LoaderSuite) SetupSuite() {
@@ -86,41 +121,7 @@ func (s *LoaderSuite) SetupSuite() {
 			},
 		},
 	}
-	var config struct {
-		HTTP struct {
-			Port          int           `ps:"port"`
-			ProfilingPort int           `ps:"profiling_port"`
-			ReadTimeout   time.Duration `ps:"read_timeout"`
-			WriteTimeout  time.Duration `ps:"write_timeout"`
-		} `ps:"http"`
-		Log struct {
-			LogLevel    string   `ps:"log_level"`
-			OutputPaths []string `ps:"output_paths"`
-		} `ps:"log"`
-		Caching struct {
-			BaseURI  string `ps:"base_uri"`
-			PoolSize int    `ps:"pool_size"`
-		} `ps:"caching"`
-		ServiceLogin struct {
-			Username string `ps:"username"`
-			Password string `ps:"password"`
-		} `ps:"service_login"`
-		DaysValid   time.Duration `ps:"days_valid"`
-		CodeTimeout time.Duration `ps:"code_timeout"`
-		ApiBaseURI  string        `ps:"api_base_uri"`
-		Level1      struct {
-			Level2 struct {
-				Level3 struct {
-					Value1 string `ps:"value1"`
-					Value2 string `ps:"value2"`
-				} `ps:"level3"`
-				Value string `ps:"value"`
-			} `ps:"level2"`
-			Value1 string `ps:"value1"`
-			Value2 string `ps:"value2"`
-		} `ps:"level1"`
-	}
-	s.c = &config
+	s.c = &testConfig{}
 }
 
 func TestInit(t *testing.T) {
@@ -129,6 +130,7 @@ func TestInit(t *testing.T) {
 
 func (s *LoaderSuite) TestLoadSuccess() {
 	require.NoError(s.T(), s.l.Load("/env/application/", s.c))
+	s.checkConfig()
 }
 
 func (s *LoaderSuite) TestLoadIntegrationSuccess() {
@@ -136,4 +138,30 @@ func (s *LoaderSuite) TestLoadIntegrationSuccess() {
 		s.T().Skip("Do not run integration tests unless explicitly asked")
 	}
 	require.NoError(s.T(), psconfig.Load("us-east-1", "/env/application/", s.c))
+	s.checkConfig()
+}
+
+func (s *LoaderSuite) checkConfig() {
+	assert.Equal(s.T(), 8085, s.c.HTTP.Port)
+	assert.Equal(s.T(), 6065, s.c.HTTP.ProfilingPort)
+	readTimeout, _ := time.ParseDuration("5s")
+	assert.Equal(s.T(), readTimeout, s.c.HTTP.ReadTimeout)
+	writeTimeout, _ := time.ParseDuration("2m")
+	assert.Equal(s.T(), writeTimeout, s.c.HTTP.WriteTimeout)
+	assert.Equal(s.T(), "info", s.c.Log.LogLevel)
+	assert.Equal(s.T(), []string{"stdout", "stderr"}, s.c.Log.OutputPaths)
+	assert.Equal(s.T(), "cache.dev:6379", s.c.Caching.BaseURI)
+	assert.Equal(s.T(), 25, s.c.Caching.PoolSize)
+	assert.Equal(s.T(), "user-name", s.c.ServiceLogin.Username)
+	assert.Equal(s.T(), "P@ssword!", s.c.ServiceLogin.Password)
+	days, _ := time.ParseDuration("720h")
+	assert.Equal(s.T(), days, s.c.DaysValid)
+	codeTimeout, _ := time.ParseDuration("10m")
+	assert.Equal(s.T(), codeTimeout, s.c.CodeTimeout)
+	assert.Equal(s.T(), "example.com/api/admin/v1", s.c.ApiBaseURI)
+	assert.Equal(s.T(), "one", s.c.Level1.Level2.Level3.Value1)
+	assert.Equal(s.T(), "two", s.c.Level1.Level2.Level3.Value2)
+	assert.Equal(s.T(), "foo", s.c.Level1.Level2.Value)
+	assert.Equal(s.T(), "one", s.c.Level1.Value1)
+	assert.Equal(s.T(), "two", s.c.Level1.Value2)
 }

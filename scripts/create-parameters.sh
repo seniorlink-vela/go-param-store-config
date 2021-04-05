@@ -19,7 +19,7 @@ aws ssm put-parameter --name "/env/application/log/log_level" \
 	--type "String" \
 	--overwrite
 aws ssm put-parameter --name "/env/application/log/output_paths" \
-	--value "stdout,stdout" \
+	--value "stdout,stderr" \
 	--type "StringList" \
 	--overwrite
 aws ssm put-parameter --name "/env/application/caching/base_uri" \
