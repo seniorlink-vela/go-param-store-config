@@ -133,6 +133,27 @@ func (s *LoaderSuite) TestLoadSuccess() {
 	s.checkConfig()
 }
 
+func (s *LoaderSuite) TestLoadFailure() {
+	var config struct {
+		Value1 string `ps:"value1"`
+		Value2 string `ps:"value2"`
+	}
+	value1 := "value1"
+	value2 := 2
+	checks := []interface{}{
+		config,
+		value1,
+		&value1,
+		value2,
+		&value2,
+	}
+	for _, check := range checks {
+		err := s.l.Load("/env/application", check)
+		require.Error(s.T(), err)
+		assert.Equal(s.T(), psconfig.KindError, err)
+	}
+}
+
 func (s *LoaderSuite) TestLoadIntegrationSuccess() {
 	if !runIntegration {
 		s.T().Skip("Do not run integration tests unless explicitly asked")
