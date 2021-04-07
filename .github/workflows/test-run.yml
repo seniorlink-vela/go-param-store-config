@@ -1,0 +1,18 @@
+name: Go Param Store Config Tests
+on: push
+jobs:
+  test:
+    name: Go test ${{ matrix.go }}
+    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        go: ['1.13', '1.14', '1.15', '1.16']
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Go ${{ matrix.go }}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Run Tests
+        run: |
+          go test ./...
