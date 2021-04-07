@@ -1,4 +1,4 @@
-# PSConfig [![Go Param Store Config Tests](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml/badge.svg)](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml)
+# PSConfig [![PSConfig Tests](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml/badge.svg)](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml)
 
 PSConfig is a utility library, built to load values from
 [AWS SSM Param Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)
@@ -59,7 +59,7 @@ nested config struct.
 ## Usage
 
 Assume you have already set some parameters in
-[AWS SSM Param Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)
+[AWS SSM Param Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html):
 
 | Name | Value | Type |
 |------|-------|------|
@@ -78,16 +78,18 @@ You can then write code like the following:
 package main
 
 import (
-    "fmt"
-    "time"
+	"encoding/json"
+	"fmt"
+	"log"
+	"time"
 
-    psconfig "https://github.com/seniorlink-vela/go-param-store-config"
+	psconfig "github.com/seniorlink-vela/go-param-store-config"
 )
 
 type HTTPConfig struct {
-	Port          int           `ps:"port"`
-	ReadTimeout   time.Duration `ps:"read_timeout"`
-	WriteTimeout  time.Duration `ps:"write_timeout"`
+	Port         int           `ps:"port"`
+	ReadTimeout  time.Duration `ps:"read_timeout"`
+	WriteTimeout time.Duration `ps:"write_timeout"`
 }
 
 type DbConfig struct {
@@ -100,13 +102,57 @@ type DbConfig struct {
 
 type ApplicationConfig struct {
 	HTTP HTTPConfig `ps:"http"`
-	DB   DBConfig   `ps:"db"`
+	DB   DbConfig   `ps:"db"`
 }
 
 func main() {
+	c := &ApplicationConfig{}
+	err := psconfig.Load("us-east-1", "/env/application/", c)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	j, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	fmt.Printf("%s\n", j)
 }
 ```
 
+The output of this is:
+
+```json
+{
+  "HTTP": {
+    "Port": 8085,
+    "ReadTimeout": 5000000000,
+    "WriteTimeout": 120000000000
+  },
+  "DB": {
+    "Host": "database-server:5432",
+    "Username": "username",
+    "Password": "passw0rd",
+    "Name": "database_name",
+    "Application": "fancy-application-name"
+  }
+}
+```
+
+### Tags
+
+You'll notice in the example above the struct fields are tagged with `ps`.  This is what we use to
+identify which parameter store values should be placed in these fields.
+
+### Supported Struct Field Types
+
+psconfig supports these struct field types:
+
+* string
+* int, int8, int16, int32, int64
+* bool
+* float32, float64
+* []string
+* struct
 
 ## Licence
 

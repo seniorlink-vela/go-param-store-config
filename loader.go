@@ -1,3 +1,7 @@
+// Package psconfig is a utility package, built to load values from
+// AWS SSM Param Store into a custom configuration `struct` for your
+// application.
+
 package psconfig
 
 import (
@@ -14,14 +18,26 @@ import (
 )
 
 var (
-	KindError    = errors.New("Incorrect config argument. Must be an address to a struct.")
+	// A KindError is thrown when you try to pass an invlaid type to `Load` or `Loader.Load`
+	KindError = errors.New("Incorrect config argument. Must be an address to a struct.")
+	// A SessionError gets thrown if you can not create an AWS session successfully
 	SessionError = errors.New("Could not start AWS session.")
 )
 
+// This is an SSM provider.  It allows us to call the AWS parameter store
+// API to retrieve the values stored there.
 type Loader struct {
 	SSM ssmiface.SSMAPI
 }
 
+// Load calls the SSM Parameter Store API, and loads the values stored there into the passed
+// config.  It will automatically decrypt encrypted values.  config must be a pointer to a struct.
+//
+// The values are associated with your struct using the `ps` tag.
+//
+// The prefixPath is the search string used to look up the associated values in the parameter
+// store.  For example, passing `/env/application` will find all of the keys and associated values
+// nested under that prefix.
 func (l *Loader) Load(pathPrefix string, config interface{}) (err error) {
 	err = validateConfig(config)
 	if err != nil {
@@ -87,6 +103,9 @@ func (l *Loader) Load(pathPrefix string, config interface{}) (err error) {
 	return
 }
 
+// Load is a simple utility method, that will instantiate an AWS session for you,
+// and call Loader.Load with a new SSM provider.  It's a shortcut, so you don't
+// have to instantiate the session and ssm service yourself.
 func Load(region, pathPrefix string, config interface{}) (err error) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	if err != nil {
