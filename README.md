@@ -1,4 +1,4 @@
-# PSConfig [![PSConfig Tests](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml/badge.svg)](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml)
+# PSConfig [![PSConfig Tests](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml/badge.svg)](https://github.com/seniorlink-vela/go-param-store-config/actions/workflows/test-run.yml) [![Go Reference](https://pkg.go.dev/badge/github.com/seniorlink-vela/go-param-store-config.svg)](https://pkg.go.dev/github.com/seniorlink-vela/go-param-store-config)
 
 PSConfig is a utility library, built to load values from
 [AWS SSM Param Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)
