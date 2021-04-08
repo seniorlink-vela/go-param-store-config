@@ -1,4 +1,4 @@
-name: Go Param Store Config Tests
+name: PSConfig Tests
 on: push
 jobs:
   test:
