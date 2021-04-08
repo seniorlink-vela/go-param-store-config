@@ -2,51 +2,51 @@ aws ssm put-parameter --name "/env/application/http/port" \
 	--value "8085" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/http/profiling_port" \
+aws ssm put-parameter --name "/env/application/http/profiling-port" \
 	--value "6065" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/http/read_timeout" \
+aws ssm put-parameter --name "/env/application/http/read-timeout" \
 	--value "5s" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/http/write_timeout" \
+aws ssm put-parameter --name "/env/application/http/write-timeout" \
 	--value "2m" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/log/log_level" \
+aws ssm put-parameter --name "/env/application/log/log-level" \
 	--value "info" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/log/output_paths" \
+aws ssm put-parameter --name "/env/application/log/output-paths" \
 	--value "stdout,stderr" \
 	--type "StringList" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/caching/base_uri" \
+aws ssm put-parameter --name "/env/application/caching/base-uri" \
 	--value "cache.dev:6379" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/caching/pool_size" \
+aws ssm put-parameter --name "/env/application/caching/pool-size" \
 	--value "25" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/service_login/username" \
+aws ssm put-parameter --name "/env/application/service-login/username" \
 	--value "user-name" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/service_login/password" \
+aws ssm put-parameter --name "/env/application/service-login/password" \
 	--value "P@ssword!" \
 	--type "SecureString" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/days_valid" \
+aws ssm put-parameter --name "/env/application/days-valid" \
 	--value "720h" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/code_timeout" \
+aws ssm put-parameter --name "/env/application/code-timeout" \
 	--value "10m" \
 	--type "String" \
 	--overwrite
-aws ssm put-parameter --name "/env/application/api_base_uri" \
+aws ssm put-parameter --name "/env/application/api-base-uri" \
 	--value "example.com/api/admin/v1" \
 	--type "String" \
 	--overwrite

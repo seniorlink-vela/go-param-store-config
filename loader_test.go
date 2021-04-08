@@ -80,25 +80,25 @@ var pm = map[string]string{
 type testConfig struct {
 	HTTP struct {
 		Port          int           `ps:"port"`
-		ProfilingPort int           `ps:"profiling_port"`
-		ReadTimeout   time.Duration `ps:"read_timeout"`
-		WriteTimeout  time.Duration `ps:"write_timeout"`
+		ProfilingPort int           `ps:"profiling-port"`
+		ReadTimeout   time.Duration `ps:"read-timeout"`
+		WriteTimeout  time.Duration `ps:"write-timeout"`
 	} `ps:"http"`
 	Log struct {
-		LogLevel    string   `ps:"log_level"`
-		OutputPaths []string `ps:"output_paths"`
+		LogLevel    string   `ps:"log-level"`
+		OutputPaths []string `ps:"output-paths"`
 	} `ps:"log"`
 	Caching struct {
-		BaseURI  string `ps:"base_uri"`
-		PoolSize int    `ps:"pool_size"`
+		BaseURI  string `ps:"base-uri"`
+		PoolSize int    `ps:"pool-size"`
 	} `ps:"caching"`
 	ServiceLogin struct {
 		Username string `ps:"username"`
 		Password string `ps:"password"`
-	} `ps:"service_login"`
-	DaysValid   time.Duration `ps:"days_valid"`
-	CodeTimeout time.Duration `ps:"code_timeout"`
-	ApiBaseURI  string        `ps:"api_base_uri"`
+	} `ps:"service-login"`
+	DaysValid   time.Duration `ps:"days-valid"`
+	CodeTimeout time.Duration `ps:"code-timeout"`
+	ApiBaseURI  string        `ps:"api-base-uri"`
 	Level1      struct {
 		Level2 struct {
 			Level3 struct {
@@ -117,7 +117,7 @@ func (s *LoaderSuite) SetupSuite() {
 		SSM: &mockParamStore{
 			sourceData: pm,
 			listParameters: map[string]bool{
-				"/env/application/log/output_paths": true,
+				"/env/application/log/output-paths": true,
 			},
 		},
 	}
