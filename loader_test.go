@@ -2,6 +2,7 @@ package psconfig_test
 
 import (
 	"flag"
+	"os"
 	"testing"
 	"time"
 
@@ -152,6 +153,23 @@ func (s *LoaderSuite) TestLoadFailure() {
 		require.Error(s.T(), err)
 		assert.Equal(s.T(), psconfig.KindError, err)
 	}
+}
+
+func (s *LoaderSuite) TestStringEnvExpandHookFunc() {
+	loader := psconfig.Loader{
+		SSM: &mockParamStore{
+			sourceData: map[string]string{
+				"/env/application/api-base-uri": "${DOMAIN}/api/admin/v1",
+			},
+		},
+	}
+	var config struct {
+		ApiBaseURI string `ps:"api-base-uri"`
+	}
+	os.Setenv("DOMAIN", "gopher")
+	psconfig.RegisterDecodeHook(psconfig.StringEnvExpandHookFunc())
+	require.NoError(s.T(), loader.Load("/env/application", &config))
+	assert.Equal(s.T(), "gopher/api/admin/v1", config.ApiBaseURI)
 }
 
 func (s *LoaderSuite) TestLoadIntegrationSuccess() {

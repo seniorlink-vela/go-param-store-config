@@ -6,9 +6,9 @@ package psconfig
 
 import (
 	"errors"
+	"os"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -23,6 +23,40 @@ var (
 	// A SessionError gets thrown if you can not create an AWS session successfully
 	SessionError = errors.New("Could not start AWS session.")
 )
+
+// This package takes advantage of the excellent https://github.com/mitchellh/mapstructure library
+// to do most of our conversion.  That allows us to take advantage of the decode hooks functionality
+// provided by that library.  By default, we always have the mapstructure.StringToTimeDurationHookFunc
+// hook enabled.
+type DecodeHookFunc mapstructure.DecodeHookFunc
+
+var decodeHooks []mapstructure.DecodeHookFunc
+
+// RegisterDecodeHook allows you to register your own decode hooks for use with your project. Any of
+// the built-in decode hooks in https://github.com/mitchellh/mapstructure can be used here, and we've
+// added StringEnvExpandHookFunc() as a convenience.
+func RegisterDecodeHook(d DecodeHookFunc) {
+	decodeHooks = append(decodeHooks, d)
+}
+
+// StringEnvExpandHookFunc returns a DecodeHookFunc that expands
+// environment variables embedded in the values.  The variables
+// replaced would be in ${var} or $var format.
+func StringEnvExpandHookFunc() DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		return os.ExpandEnv(data.(string)), nil
+	}
+}
+
+func init() {
+	decodeHooks = append(decodeHooks, mapstructure.StringToTimeDurationHookFunc())
+}
 
 // This is an SSM provider.  It allows us to call the AWS parameter store
 // API to retrieve the values stored there.
@@ -69,6 +103,9 @@ func (l *Loader) Load(pathPrefix string, config interface{}) (err error) {
 	cm := map[string]interface{}{}
 	for k, v := range pm {
 		k = strings.TrimPrefix(k, pathPrefix)
+		if strings.HasPrefix(k, "/") {
+			k = strings.TrimPrefix(k, "/")
+		}
 		ks := strings.Split(k, "/")
 		if len(ks) == 1 {
 			cm[ks[0]] = v
@@ -89,7 +126,7 @@ func (l *Loader) Load(pathPrefix string, config interface{}) (err error) {
 		m[ks[i]] = v
 	}
 	decoderConfig := &mapstructure.DecoderConfig{
-		DecodeHook:       decodeHooks(),
+		DecodeHook:       mapstructure.ComposeDecodeHookFunc(decodeHooks...),
 		WeaklyTypedInput: true,
 		Result:           config,
 		TagName:          "ps",
@@ -115,25 +152,6 @@ func Load(region, pathPrefix string, config interface{}) (err error) {
 	svc := ssm.New(sess)
 	l := Loader{SSM: svc}
 	return l.Load(pathPrefix, config)
-}
-
-func decodeHooks() mapstructure.DecodeHookFunc {
-	return func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
-		if f.Kind() != reflect.String {
-			return data, nil
-		}
-		var duration time.Duration
-
-		switch t {
-		case reflect.TypeOf(duration):
-			return time.ParseDuration(data.(string))
-		}
-		return data, nil
-	}
 }
 
 func validateConfig(config interface{}) error {
