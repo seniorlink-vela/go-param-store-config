@@ -24,6 +24,8 @@ var (
 	SessionError = errors.New("Could not start AWS session.")
 )
 
+type secureString string
+
 // This package takes advantage of the excellent https://github.com/mitchellh/mapstructure library
 // to do most of our conversion.  That allows us to take advantage of the decode hooks functionality
 // provided by that library.  By default, we always have the mapstructure.StringToTimeDurationHookFunc
@@ -41,13 +43,15 @@ func RegisterDecodeHook(d DecodeHookFunc) {
 
 // StringEnvExpandHookFunc returns a DecodeHookFunc that expands
 // environment variables embedded in the values.  The variables
-// replaced would be in ${var} or $var format.
+// replaced would be in ${var} or $var format. (Parameters of type
+// SecureString will not be expanded.)
 func StringEnvExpandHookFunc() DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
 		data interface{}) (interface{}, error) {
-		if f.Kind() != reflect.String {
+		// We are deliberately **not** expanding SecureString parameters
+		if f.Kind() != reflect.String || f.Name() == "secureString" {
 			return data, nil
 		}
 		return os.ExpandEnv(data.(string)), nil
@@ -87,9 +91,11 @@ func (l *Loader) Load(pathPrefix string, config interface{}) (err error) {
 	err = l.SSM.GetParametersByPathPages(in, func(params *ssm.GetParametersByPathOutput, lastPage bool) bool {
 		for _, p := range params.Parameters {
 			pt := *p.Type
-			if pt == ssm.DocumentParameterTypeStringList {
+			if pt == ssm.ParameterTypeStringList {
 				val := strings.Split(*p.Value, ",")
 				pm[strings.TrimPrefix(*p.Name, pathPrefix)] = val
+			} else if pt == ssm.ParameterTypeSecureString {
+				pm[strings.TrimPrefix(*p.Name, pathPrefix)] = secureString(*p.Value)
 			} else {
 				pm[strings.TrimPrefix(*p.Name, pathPrefix)] = *p.Value
 			}
